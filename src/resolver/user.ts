@@ -29,51 +29,42 @@ const createToken = async (user: User, secret: string, expiresIn: string) => {
 
 export default {
   Query: {
-    users: combineResolvers(
-      isAuthenticated,
-      async (parent: any, args: object) => {
-        try {
-          let users = await fetchData();
-          if (!users) {
-            return null;
-          }
-
-          return users;
-        } catch (e) {
-          throw new Error(e);
+    users: async (parent: any, args: object) => {
+      try {
+        let users = await fetchData();
+        if (!users) {
+          return null;
         }
+
+        return users;
+      } catch (e) {
+        throw new Error(e);
       }
-    ),
+    },
 
-    user: combineResolvers(
-      isAuthenticated,
-      async (parent: any, args: UserInterface) => {
-        try {
-          const { email } = args;
-          let users = await fetchData();
-
-          let result = users.find((user) => user.email === email);
-          console.log(result);
-          return result;
-        } catch (e) {
-          throw new Error(e);
-        }
-      }
-    ),
-
-    me: combineResolvers(
-      isAuthenticated,
-      async (parent: any, args: UsersInterface, context: any) => {
-        const { me } = context;
-        const { email } = me;
-
+    user: async (parent: any, args: UserInterface) => {
+      try {
+        const { email } = args;
         let users = await fetchData();
 
         let result = users.find((user) => user.email === email);
-
+        console.log(result);
         return result;
+      } catch (e) {
+        throw new Error(e);
       }
-    ),
+    },
+
+    me: async (parent: any, args: UsersInterface, context: any) => {
+      const { me } = context;
+      const { email } = me;
+
+      let users = await fetchData();
+
+      let result = users.find((user) => user.email === email);
+
+      return result;
+    },
   },
 
   Mutation: {
@@ -125,44 +116,38 @@ export default {
       return { token: createToken(result, secret, "30m") };
     },
 
-    deleteUser: combineResolvers(
-      isAuthenticated,
-      async (parent: any, args: any) => {
-        let users = await fetchData();
-        const { email } = args;
+    deleteUser: async (parent: any, args: any) => {
+      let users = await fetchData();
+      const { email } = args;
 
-        let user = users.filter((user) => user.email !== email);
+      let user = users.filter((user) => user.email !== email);
 
-        await mutateFile(user);
+      await mutateFile(user);
 
-        if (users.length > user.length) {
-          return { status: true };
-        } else {
-          return { status: false };
-        }
+      if (users.length > user.length) {
+        return { status: true };
+      } else {
+        return { status: false };
       }
-    ),
+    },
 
-    updateUser: combineResolvers(
-      isAuthenticated,
-      async (parent: any, args: User) => {
-        let users = await fetchData();
-        const { email, first_name, last_name } = args;
+    updateUser: async (parent: any, args: User) => {
+      let users = await fetchData();
+      const { email, first_name, last_name } = args;
 
-        let response = users.find((user) => user.email === email);
+      let response = users.find((user) => user.email === email);
 
-        if (!response) {
-          throw new UserInputError("employee not found");
-        }
-
-        email ? (response.email = email) : null;
-        first_name ? (response.first_name = first_name) : null;
-        last_name ? (response.last_name = last_name) : null;
-
-        await mutateFile(users);
-
-        return response;
+      if (!response) {
+        throw new UserInputError("employee not found");
       }
-    ),
+
+      email ? (response.email = email) : null;
+      first_name ? (response.first_name = first_name) : null;
+      last_name ? (response.last_name = last_name) : null;
+
+      await mutateFile(users);
+
+      return response;
+    },
   },
 };
