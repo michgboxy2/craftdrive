@@ -127,7 +127,7 @@ export default {
 
     deleteUser: combineResolvers(
       isAuthenticated,
-      async (parent: any, args: { email: string }) => {
+      async (parent: any, args: any) => {
         let users = await fetchData();
         const { email } = args;
 
