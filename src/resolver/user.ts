@@ -1,26 +1,9 @@
 import jwt from "jsonwebtoken";
-import { combineResolvers } from "graphql-resolvers";
-import { AuthenticationError, UserInputError } from "apollo-server";
-import { isAuthenticated } from "./authorization";
-
-import { UserDoc } from "../models/userModel";
-import { AuthDoc } from "../models/auth";
-import { models } from "mongoose";
+import { UserInputError } from "apollo-server";
+import { checkIfLoggedIn } from "./authorization";
 import { fetchData, write, User, mutateFile } from "../services/dataset";
 import { Password } from "../services/password";
-
-interface contextAttr {
-  User: UserDoc;
-  Auth: AuthDoc;
-  me: any;
-  secret: string;
-}
-
-interface UsersInterface {}
-
-interface UserInterface {
-  email: string;
-}
+import { contextAttr, UserInterface, UsersInterface } from "../services/types";
 
 const createToken = async (user: User, secret: string, expiresIn: string) => {
   const { email } = user;
@@ -29,8 +12,11 @@ const createToken = async (user: User, secret: string, expiresIn: string) => {
 
 export default {
   Query: {
-    users: async (parent: any, args: object) => {
+    users: async (parent: any, args: UserInterface, context: contextAttr) => {
       try {
+        const { me } = context;
+        checkIfLoggedIn(me);
+
         let users = await fetchData();
         if (!users) {
           return null;
@@ -42,21 +28,25 @@ export default {
       }
     },
 
-    user: async (parent: any, args: UserInterface) => {
+    user: async (parent: any, args: UserInterface, context: contextAttr) => {
       try {
+        const { me } = context;
+        checkIfLoggedIn(me);
         const { email } = args;
         let users = await fetchData();
 
         let result = users.find((user) => user.email === email);
-        console.log(result);
         return result;
       } catch (e) {
         throw new Error(e);
       }
     },
 
-    me: async (parent: any, args: UsersInterface, context: any) => {
+    me: async (parent: any, args: UsersInterface, context: contextAttr) => {
       const { me } = context;
+
+      checkIfLoggedIn(me);
+
       const { email } = me;
 
       let users = await fetchData();
@@ -100,7 +90,7 @@ export default {
         throw new Error(e);
       }
     },
-    signIn: async (parent: any, args: any, context: contextAttr) => {
+    signIn: async (parent: any, args: User, context: contextAttr) => {
       const { email, password } = args;
 
       const { secret } = context;
@@ -116,7 +106,10 @@ export default {
       return { token: createToken(result, secret, "30m") };
     },
 
-    deleteUser: async (parent: any, args: any) => {
+    deleteUser: async (parent: any, args: any, context: contextAttr) => {
+      const { me } = context;
+      checkIfLoggedIn(me);
+
       let users = await fetchData();
       const { email } = args;
 
@@ -131,7 +124,10 @@ export default {
       }
     },
 
-    updateUser: async (parent: any, args: User) => {
+    updateUser: async (parent: any, args: User, context: contextAttr) => {
+      const { me } = context;
+      checkIfLoggedIn(me);
+
       let users = await fetchData();
       const { email, first_name, last_name } = args;
 
