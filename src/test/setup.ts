@@ -11,11 +11,7 @@ declare global {
   }
 }
 
-beforeEach(async () => {
-  //   let token = await global.getToken();
-  //   await deleteUser({ email: "testUser@gmail.com" }, token);
-  //   await global.signup();
-});
+beforeEach(async () => {});
 
 afterEach(async () => {
   let token = await global.getToken();
