@@ -1,9 +1,14 @@
 import jwt from "jsonwebtoken";
 import { UserInputError } from "apollo-server";
 import { checkIfLoggedIn } from "./authorization";
-import { fetchData, write, User, mutateFile } from "../services/dataset";
+import { fetchData, write, mutateFile } from "../services/dataset";
 import { Password } from "../services/password";
-import { contextAttr, UserInterface, UsersInterface } from "../services/types";
+import {
+  contextAttr,
+  UserInterface,
+  UsersInterface,
+  User,
+} from "../services/types";
 
 const createToken = async (user: User, secret: string, expiresIn: string) => {
   const { email } = user;
@@ -60,15 +65,7 @@ export default {
   Mutation: {
     signUp: async (parent: any, args: User, context: contextAttr) => {
       try {
-        const {
-          first_name,
-          last_name,
-          email,
-          password,
-          created_at,
-          department,
-          gender,
-        } = args;
+        const { first_name, last_name, email, password } = args;
 
         let employeeList = await fetchData();
 
@@ -103,11 +100,18 @@ export default {
         throw new UserInputError("incorrect credentials");
       }
 
+      const passwordMatch = await Password.compare(result.password, password);
+
+      if (!passwordMatch) {
+        throw new UserInputError("incorrect credentials");
+      }
+
       return { token: createToken(result, secret, "30m") };
     },
 
     deleteUser: async (parent: any, args: any, context: contextAttr) => {
       const { me } = context;
+
       checkIfLoggedIn(me);
 
       let users = await fetchData();
@@ -131,7 +135,7 @@ export default {
       let users = await fetchData();
       const { email, first_name, last_name } = args;
 
-      let response = users.find((user) => user.email === email);
+      let response = users.find((user) => user.email === me.email);
 
       if (!response) {
         throw new UserInputError("employee not found");

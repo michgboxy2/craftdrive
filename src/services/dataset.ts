@@ -1,22 +1,20 @@
-import fs, { createReadStream, createWriteStream } from "fs";
+import fs from "fs";
 import csv from "csv-parser";
 import { Parser, parse } from "json2csv";
 
-import * as models from "../models";
+import { User } from "../services/types";
 
-const FILENAME = process.cwd() + "/src/data.csv";
-const FIELDS = ["first_name", "last_name", "email", "password"];
+const isTest = !!process.env.TEST_FILE;
 
-export interface User {
-  // id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  gender: string;
-  department: string;
-  password: string;
-  created_at: string;
+let FILENAME: string;
+
+if (isTest) {
+  FILENAME = process.cwd() + "/src/test_data.csv";
+} else {
+  FILENAME = process.cwd() + "/src/data.csv";
 }
+
+const fields = ["first_name", "last_name", "email", "password"];
 
 //read data set from CSV file
 export const fetchData = async (): Promise<User[]> => {
@@ -32,7 +30,15 @@ export const fetchData = async (): Promise<User[]> => {
 };
 
 export const write = async (data: User) => {
-  let rows = parse(data, { header: false });
+  let rows;
+  const opts = { fields };
+  const parser = new Parser(opts);
+  if (!fs.existsSync(FILENAME)) {
+    rows = parser.parse(data);
+  } else {
+    rows = parse(data, { header: false });
+  }
+
   const newLine = "\r\n";
 
   fs.appendFileSync(FILENAME, newLine);
@@ -41,7 +47,6 @@ export const write = async (data: User) => {
 
 export const mutateFile = async (data: User[]) => {
   try {
-    const fields = ["first_name", "last_name", "email", "password"];
     const opts = { fields };
 
     const parser = new Parser(opts);

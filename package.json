@@ -5,14 +5,24 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node-dev --poll src/server.ts",
+    "test-server": "TEST_FILE=test_data.csv npm start",
     "test": "jest --watchAll --no-cache"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "./src/test/setup.ts"
+    ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/chai": "^4.2.12",
     "apollo-server": "^2.16.1",
     "apollo-server-express": "^2.16.1",
+    "axios": "^0.19.2",
     "bcrypt": "^5.0.0",
     "cors": "^2.8.5",
     "csv-parser": "^2.3.3",
@@ -38,6 +48,7 @@
     "@types/jsonwebtoken": "^8.5.0",
     "@types/mongoose": "^5.7.36",
     "@types/supertest": "^2.0.10",
+    "chai": "^4.2.0",
     "jest": "^26.3.0",
     "supertest": "^4.0.2",
     "ts-jest": "^26.2.0"
